@@ -1,0 +1,45 @@
+{
+  "_comment": [
+    "Aviation Safety Network (ASN) CSV export mapping.",
+    "",
+    "IMPORTANT: ASN data requires a license agreement before bulk ingestion.",
+    "Contact aviation-safety.net before using this mapping with real ASN data.",
+    "This mapping is provided for reference and testing against sample data only.",
+    "",
+    "ASN CSV columns (as of 2024 export format):",
+    "  date, type, registration, operator, fat., location, country, phase,",
+    "  nature, departure airport, destination airport, narrative, acc_no",
+    "",
+    "To ingest: atlas ingest generic-csv --filepath asn_export.csv --mapping asn",
+    "To dry-run: atlas ingest generic-csv --filepath asn_export.csv --mapping asn --dry-run"
+  ],
+  "source_id": "src-asn-001",
+  "record_id_field": "acc_no",
+  "delimiter": ";",
+  "encoding": "utf-8",
+  "field_map": {
+    "date":              "occurred_at",
+    "type":              "aircraft_make",
+    "registration":      "aircraft_registration",
+    "operator":          "operator_name",
+    "fat.":              "fatalities_total",
+    "location":          "location_text",
+    "country":           "country_code",
+    "phase":             "phase_of_flight",
+    "narrative":         "probable_cause",
+    "acc_no":            "ntsb_report_number"
+  },
+  "value_transforms": {
+    "phase_of_flight": {
+      "approach":    "APPROACH",
+      "landing":     "LANDING",
+      "takeoff":     "TAKEOFF",
+      "climb":       "CLIMB",
+      "cruise":      "CRUISE",
+      "descent":     "DESCENT",
+      "maneuvering": "MANEUVERING",
+      "taxi":        "TAXI",
+      "standing":    "STANDING"
+    }
+  }
+}

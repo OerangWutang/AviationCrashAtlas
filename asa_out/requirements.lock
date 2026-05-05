@@ -1,0 +1,141 @@
+alembic==1.18.4
+    # via aviation-safety-atlas (pyproject.toml)
+annotated-doc==0.0.4
+    # via
+    #   fastapi
+    #   typer
+annotated-types==0.7.0
+    # via pydantic
+anyio==4.13.0
+    # via
+    #   httpx
+    #   starlette
+    #   watchfiles
+asyncpg==0.31.0
+    # via aviation-safety-atlas (pyproject.toml)
+certifi==2026.4.22
+    # via
+    #   httpcore
+    #   httpx
+click==8.3.3
+    # via
+    #   typer
+    #   uvicorn
+deprecated==1.3.1
+    # via limits
+fastapi==0.136.1
+    # via aviation-safety-atlas (pyproject.toml)
+geoalchemy2==0.19.0
+    # via aviation-safety-atlas (pyproject.toml)
+greenlet==3.5.0
+    # via sqlalchemy
+h11==0.16.0
+    # via
+    #   httpcore
+    #   uvicorn
+hiredis==3.3.1
+    # via redis
+httpcore==1.0.9
+    # via httpx
+httptools==0.7.1
+    # via uvicorn
+httpx==0.28.1
+    # via aviation-safety-atlas (pyproject.toml)
+idna==3.13
+    # via
+    #   anyio
+    #   httpx
+limits==5.8.0
+    # via slowapi
+mako==1.3.12
+    # via alembic
+markdown-it-py==4.0.0
+    # via rich
+markupsafe==3.0.3
+    # via mako
+mdurl==0.1.2
+    # via markdown-it-py
+numpy==2.4.4
+    # via shapely
+packaging==26.2
+    # via
+    #   geoalchemy2
+    #   limits
+prometheus-client==0.25.0
+    # via aviation-safety-atlas (pyproject.toml)
+psycopg2-binary==2.9.12
+    # via aviation-safety-atlas (pyproject.toml)
+pydantic==2.13.3
+    # via
+    #   aviation-safety-atlas (pyproject.toml)
+    #   fastapi
+    #   pydantic-settings
+pydantic-core==2.46.3
+    # via pydantic
+pydantic-settings==2.14.0
+    # via aviation-safety-atlas (pyproject.toml)
+pygments==2.20.0
+    # via rich
+python-dateutil==2.9.0.post0
+    # via aviation-safety-atlas (pyproject.toml)
+python-dotenv==1.2.2
+    # via
+    #   pydantic-settings
+    #   uvicorn
+python-ulid==3.1.0
+    # via aviation-safety-atlas (pyproject.toml)
+pyyaml==6.0.3
+    # via uvicorn
+redis==7.4.0
+    # via aviation-safety-atlas (pyproject.toml)
+rich==15.0.0
+    # via
+    #   aviation-safety-atlas (pyproject.toml)
+    #   typer
+shapely==2.1.2
+    # via aviation-safety-atlas (pyproject.toml)
+shellingham==1.5.4
+    # via typer
+six==1.17.0
+    # via python-dateutil
+slowapi==0.1.9
+    # via aviation-safety-atlas (pyproject.toml)
+sqlalchemy==2.0.49
+    # via
+    #   alembic
+    #   aviation-safety-atlas (pyproject.toml)
+    #   geoalchemy2
+starlette==1.0.0
+    # via fastapi
+structlog==25.5.0
+    # via aviation-safety-atlas (pyproject.toml)
+tenacity==9.1.4
+    # via aviation-safety-atlas (pyproject.toml)
+typer==0.25.1
+    # via aviation-safety-atlas (pyproject.toml)
+typing-extensions==4.15.0
+    # via
+    #   alembic
+    #   anyio
+    #   fastapi
+    #   limits
+    #   pydantic
+    #   pydantic-core
+    #   sqlalchemy
+    #   starlette
+    #   typing-inspection
+typing-inspection==0.4.2
+    # via
+    #   fastapi
+    #   pydantic
+    #   pydantic-settings
+uvicorn==0.46.0
+    # via aviation-safety-atlas (pyproject.toml)
+uvloop==0.22.1
+    # via uvicorn
+watchfiles==1.1.1
+    # via uvicorn
+websockets==16.0
+    # via uvicorn
+wrapt==2.1.2
+    # via deprecated

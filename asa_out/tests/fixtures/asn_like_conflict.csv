@@ -1,0 +1,2 @@
+date;type;registration;operator;fat.;location;country;phase;nature;departure airport;destination airport;narrative;acc_no
+2023-02-11;Piper PA-28-181;N67890;Sun Country Aviation;2;Fort Lauderdale, Florida;United States;takeoff;Training flight;Fort Lauderdale Executive;Fort Lauderdale Executive;ASN-like fixture intentionally disagrees with NTSB fatality count for regression testing.;ASN-FIXTURE-001
