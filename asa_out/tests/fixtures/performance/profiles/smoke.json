@@ -1,0 +1,5 @@
+{
+  "ntsb_rows": 500,
+  "asn_rows": 50,
+  "dense_fraction": 0.65
+}
