@@ -1,0 +1,146 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "atlas-backend"
+version = "0.2.0"
+description = "Claims-based aviation accident data integrity backend"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.121",
+    "starlette>=1.0.1",  # >=1.0.1 fixes PYSEC-2026-161/CVE-2026-48710 (Host-header path injection).
+                         # prometheus-fastapi-instrumentator 7.1.0 over-constrains this to <1.0.0;
+                         # that cap is lifted via [tool.uv] override-dependencies below (verified
+                         # runtime-compatible — the instrumentator only uses stable Starlette APIs).
+    "uvicorn[standard]>=0.30",
+    "pydantic>=2.7",
+    "pydantic-settings>=2.3",
+    "orjson>=3.10",
+    "gunicorn>=23.0",
+    "prometheus-fastapi-instrumentator>=7.1",
+    "sqlalchemy[asyncio]>=2.0",
+    "asyncpg>=0.29",
+    "psycopg2-binary>=2.9",
+    "alembic>=1.13",
+    "typer>=0.12",
+    "pypdf>=4.0",
+    "jinja2>=3.1",
+    "python-multipart>=0.0.9",
+    # Pulled in for TICKET-009: AES-256-GCM to encrypt MFA seeds at rest, and
+    # RFC-6238 TOTP for the destructive-endpoint MFA gate.  Both are stable,
+    # widely-audited libraries; pinned with floor versions only.
+    "cryptography>=42",
+    "pyotp>=2.9",
+    # PDF rendering for court-ready report exports. Requires libpango + libcairo
+    # at the OS level (Alpine: apk add pango cairo; Debian: apt-get install libpangocairo-1.0-0).
+    # Import is deferred inside render_pdf() so the server starts without the native libs;
+    # only the ?format=pdf download endpoint fails if they are absent.
+    "weasyprint>=60.0",
+    # OpenTelemetry tracing. Active only when OTEL_EXPORTER_OTLP_ENDPOINT is set at runtime;
+    # import is deferred inside _configure_otel() so an unconfigured deploy never contacts an
+    # OTLP collector and startup is not slowed by gRPC channel initialisation.
+    "opentelemetry-sdk>=1.25",
+    "opentelemetry-instrumentation-fastapi>=0.46b0",
+    "opentelemetry-instrumentation-sqlalchemy>=0.46b0",
+    "opentelemetry-exporter-otlp-proto-grpc>=1.25",
+]
+
+# prometheus-fastapi-instrumentator 7.1.0 declares `starlette<1.0.0` in its metadata.
+# That bound is defensive, not a real API incompatibility: the package imports only
+# long-stable Starlette surfaces (Request/Response, routing Route/Mount/Match, Headers,
+# the ASGI `types` module, Starlette) — all unchanged across 0.x -> 1.0 -> 1.1. Lifting
+# the cap is required to adopt the PYSEC-2026-161 fix (starlette>=1.0.1). Remove this
+# override once the instrumentator publishes a release that permits starlette>=1.0.0.
+# `uv pip compile` reads this section automatically; see the `lock` target in the Makefile.
+[tool.uv]
+override-dependencies = ["starlette>=1.0.1"]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.2",
+    "pytest-asyncio>=0.23",
+    "pytest-cov>=5.0",
+    "httpx>=0.27",
+    "ruff>=0.5",
+    "mypy>=1.10",
+    "anyio[trio]>=4.4",
+]
+
+[project.scripts]
+atlas = "atlas.presentation.cli.commands:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "."]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "--cov=atlas --cov-report=term-missing -q"
+markers = [
+    "integration: tests that require PostgreSQL",
+    "release: pre-install artifact checks; excluded from default and editable-install CI runs",
+]
+filterwarnings = ["error::DeprecationWarning"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP", "RUF"]
+# B008: function calls in default args. FastAPI's `Depends(...)`, `Security(...)`,
+#       `Query(...)`, `Body(...)` etc. are the canonical pattern; the framework
+#       resolves them per-request. Ignoring globally is the standard approach.
+# E501: long lines — handled by formatter when present.
+# UP047: PEP 695 generic-function syntax. Mypy strict + Pydantic v2 plugin
+#        coverage is still uneven on this; defer until upgraded.
+ignore = ["E501", "B008", "UP047"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["atlas", "tests"]
+
+[tool.mypy]
+# Strict type-checking applies to production source only.
+# Test code is intentionally exercised by pytest rather than mypy; use `mypy src`.
+files = ["src"]
+python_version = "3.12"
+strict = true
+ignore_missing_imports = true
+plugins = ["pydantic.mypy"]
+
+# Framework-decorated layers: relax strict-mode requirements that ride on
+# framework conventions rather than catching real bugs.
+#
+# - FastAPI routers: dependency-injection decorators (Depends, Security,
+#   Query) and JSON-shaped response dicts make strict return-type annotations
+#   noisy without strengthening the type story. The OpenAPI schema (generated
+#   from Pydantic models) is the contract we actually rely on.
+# - Typer CLI commands: ditto for command decorators.
+# - DB session helpers: ``async_sessionmaker`` and ``create_async_engine``
+#   return SQLAlchemy types that mypy can't always narrow without sprinkling
+#   ``cast``. Strictness here would chase the SQLAlchemy stubs, not bugs.
+# - Domain ``constants.py``: the DISPUTED sentinel uses class-level descriptor
+#   protocol that pre-dates Pydantic v2's preferred approach; full strictness
+#   here would require a migration to ``Annotated[..., BeforeValidator(...)]``.
+[[tool.mypy.overrides]]
+module = [
+    "atlas.presentation.api.routers.*",
+    "atlas.presentation.api.app",
+    "atlas.presentation.api.dependencies",
+    "atlas.presentation.cli.*",
+    "atlas.infrastructure.db.session",
+    "atlas.infrastructure.event_bus.outbox_worker",
+    "atlas.domain.constants",
+    "atlas.domain.exceptions",
+]
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+disallow_any_generics = false
+warn_return_any = false
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+ignore_errors = true

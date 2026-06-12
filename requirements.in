@@ -1,0 +1,32 @@
+# Production dependencies only - matches [project].dependencies in pyproject.toml.
+# Pin with: make lock -> generates requirements.txt
+# Do not install from this file in CI or Docker - use requirements.txt instead.
+fastapi>=0.121
+starlette>=1.0.1  # >=1.0.1 fixes PYSEC-2026-161/CVE-2026-48710 (Host-header path injection).
+                 # prometheus-fastapi-instrumentator 7.1.0 over-constrains starlette to <1.0.0;
+                 # that defensive cap is lifted via [tool.uv] override-dependencies in
+                 # pyproject.toml, which `uv pip compile` (see `make lock`) applies. Drop the
+                 # override once the instrumentator permits starlette>=1.0.0.
+uvicorn[standard]>=0.30
+pydantic>=2.7
+pydantic-settings>=2.3
+orjson>=3.10
+gunicorn>=23.0
+prometheus-fastapi-instrumentator>=7.1
+sqlalchemy[asyncio]>=2.0
+asyncpg>=0.29
+psycopg2-binary>=2.9
+alembic>=1.13
+typer>=0.12
+cryptography>=42.0
+pyotp>=2.9
+jinja2>=3.1
+pypdf>=4.0
+python-multipart>=0.0.9
+weasyprint>=60.0  # PDF rendering; requires libpango + libcairo at OS level
+# OpenTelemetry tracing — active only when OTEL_EXPORTER_OTLP_ENDPOINT is set.
+# Server starts without an OTLP endpoint; import is deferred inside _configure_otel().
+opentelemetry-sdk>=1.25
+opentelemetry-instrumentation-fastapi>=0.46b0
+opentelemetry-instrumentation-sqlalchemy>=0.46b0
+opentelemetry-exporter-otlp-proto-grpc>=1.25
