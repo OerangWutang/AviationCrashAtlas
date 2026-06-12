@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Platform — Aviation Safety Atlas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Serif:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<nav>
+  <div class="nav-inner">
+    <a class="nav-logo" href="/">Aviation Safety <span>Atlas</span></a>
+    <ul class="nav-links">
+      <li><a href="/platform.html">Platform</a></li>
+      <li><a href="/how-it-works.html">How It Works</a></li>
+      <li><a href="/use-cases.html">Use Cases</a></li>
+      <li><a href="/security.html">Security</a></li>
+    </ul>
+    <div class="nav-cta">
+      <a href="/app/login" class="btn btn-outline">Sign in</a>
+      <a href="/request-access.html" class="btn btn-primary">Request access</a>
+    </div>
+  </div>
+</nav>
+
+<main>
+<section class="page-header">
+  <div class="container">
+    <h1>Platform</h1>
+    <p class="subtitle">Claims-based evidence integrity for aviation safety data.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <h2>The evidence chain</h2>
+    <p>The Atlas platform is built around a simple but rigorous idea: every projected fact in the system is strictly accountable to an immutable evidence chain.</p>
+    <div class="flow-diagram">
+      <div class="flow-step"><strong>Ingest</strong><br/>Source data from NTSB, FAA, FOQA, ASAP, maintenance logs, depositions</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><strong>Extract</strong><br/>Field-level claims with source fingerprint and reliability tier</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><strong>Reconcile</strong><br/>Conflict detection between disagreeing sources</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><strong>Resolve</strong><br/>Reviewer selects winner with required rationale</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><strong>Export</strong><br/>Immutable report with every fact footnoted to its source</div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt">
+  <div class="container">
+    <h2>Architecture</h2>
+    <div class="two-col">
+      <div class="feature-card">
+        <h3>Claims model</h3>
+        <p>Each field is stored as an independent claim with source provenance, ingestion timestamp, and reliability tier. The projection is a derived view — not the truth itself.</p>
+      </div>
+      <div class="feature-card">
+        <h3>Conflict resolution</h3>
+        <p>When sources disagree, the system surfaces an explicit conflict rather than silently resolving. Resolutions require a rationale and are recorded in an immutable activity log.</p>
+      </div>
+      <div class="feature-card">
+        <h3>Provenance</h3>
+        <p>Every fact links back to its source claim, ingestion run, and raw snapshot. Audit hashes enable independent verification of data integrity.</p>
+      </div>
+      <div class="feature-card">
+        <h3>Tenant isolation</h3>
+        <p>Enterprise tenants operate in isolated PostgreSQL schemas with row-level security. Private evidence never leaks into public views.</p>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <a class="nav-logo" href="/">Aviation Safety <span>Atlas</span></a>
+        <p>The projected public record is not the truth. The evidence chain is the truth.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Product</h4>
+        <ul>
+          <li><a href="/platform.html">Platform</a></li>
+          <li><a href="/how-it-works.html">How it works</a></li>
+          <li><a href="/use-cases.html">Use cases</a></li>
+          <li><a href="/request-access.html">Request access</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Trust</h4>
+        <ul>
+          <li><a href="/security.html">Security</a></li>
+          <li><a href="/compliance.html">Compliance</a></li>
+          <li><a href="/legal/privacy.html">Privacy</a></li>
+          <li><a href="/legal/terms.html">Terms of service</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="/about.html">About</a></li>
+          <li><a href="/contact.html">Contact</a></li>
+          <li><a href="/contact#security">Security disclosure</a></li>
+          <li><a href="/contact#legal">Legal contact</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2026 Aviation Safety Atlas. All rights reserved.</p>
+      <p>Built for the record you can defend.</p>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

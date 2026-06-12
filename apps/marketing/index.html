@@ -1,0 +1,1370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aviation Safety Atlas — The record you can defend.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Serif:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; font-size: 16px; }
+
+/* ── Design tokens (match apps/web tailwind.config.js) ── */
+:root {
+  --atlas-50:  #f0f4f8;
+  --atlas-100: #d9e2ec;
+  --atlas-200: #bcccdc;
+  --atlas-300: #9fb3c8;
+  --atlas-400: #829ab1;
+  --atlas-500: #627d98;
+  --atlas-600: #486581;
+  --atlas-700: #334e68;
+  --atlas-800: #243b53;
+  --atlas-900: #102a43;
+  --atlas-950: #0a1929;
+
+  --disputed-500: #f59e0b;
+  --disputed-700: #b45309;
+  --resolved-500: #10b981;
+  --resolved-700: #047857;
+
+  --sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --serif: "IBM Plex Serif", Georgia, serif;
+  --mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+body {
+  font-family: var(--sans);
+  color: var(--atlas-900);
+  background: #fff;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Utility ── */
+.container {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2em 0.65em;
+  border-radius: 3px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border: 1px solid;
+}
+.chip-disputed { background: #fffbeb; color: var(--disputed-700); border-color: #fde68a; }
+.chip-resolved { background: #ecfdf5; color: var(--resolved-700); border-color: #a7f3d0; }
+.chip-neutral  { background: var(--atlas-50); color: var(--atlas-700); border-color: var(--atlas-200); }
+
+/* ── Nav ── */
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(255,255,255,0.96);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--atlas-100);
+}
+.nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 3.5rem;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+.nav-logo {
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--atlas-900);
+  text-decoration: none;
+  letter-spacing: -0.01em;
+}
+.nav-logo span {
+  color: var(--atlas-500);
+  font-weight: 400;
+  font-style: italic;
+}
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  list-style: none;
+}
+.nav-links a {
+  font-size: 0.85rem;
+  color: var(--atlas-600);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.15s;
+}
+.nav-links a:hover { color: var(--atlas-900); }
+.nav-cta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5em 1.1em;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.15s;
+  border: 1.5px solid transparent;
+}
+.btn-primary {
+  background: var(--atlas-900);
+  color: #fff;
+  border-color: var(--atlas-900);
+}
+.btn-primary:hover { background: var(--atlas-800); border-color: var(--atlas-800); }
+.btn-outline {
+  background: transparent;
+  color: var(--atlas-700);
+  border-color: var(--atlas-300);
+}
+.btn-outline:hover { border-color: var(--atlas-500); color: var(--atlas-900); }
+.btn-lg {
+  padding: 0.7em 1.6em;
+  font-size: 0.95rem;
+}
+
+/* ── Hero ── */
+.hero {
+  background: var(--atlas-950);
+  color: #fff;
+  padding: 7rem 0 6rem;
+  position: relative;
+  overflow: hidden;
+}
+/* Subtle ruled-paper texture */
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 39px,
+    rgba(255,255,255,0.03) 39px,
+    rgba(255,255,255,0.03) 40px
+  );
+  pointer-events: none;
+}
+.hero-inner {
+  position: relative;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5rem;
+  align-items: center;
+}
+.hero-eyebrow {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  color: var(--atlas-400);
+  text-transform: uppercase;
+  margin-bottom: 1.5rem;
+}
+.hero h1 {
+  font-family: var(--serif);
+  font-size: 3.25rem;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin-bottom: 1.5rem;
+}
+.hero h1 em {
+  font-style: italic;
+  color: var(--atlas-300);
+}
+.hero-sub {
+  font-size: 1.05rem;
+  color: var(--atlas-300);
+  line-height: 1.65;
+  margin-bottom: 2.5rem;
+  max-width: 44ch;
+}
+.hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.hero-actions .btn-primary { background: #fff; color: var(--atlas-900); border-color: #fff; }
+.hero-actions .btn-primary:hover { background: var(--atlas-100); border-color: var(--atlas-100); }
+.hero-actions .btn-outline { border-color: var(--atlas-600); color: var(--atlas-300); }
+.hero-actions .btn-outline:hover { border-color: var(--atlas-400); color: #fff; }
+
+/* ── Hero evidence chain diagram ── */
+.hero-diagram {
+  position: relative;
+}
+.chain-container {
+  background: var(--atlas-900);
+  border: 1px solid var(--atlas-700);
+  border-radius: 8px;
+  padding: 1.5rem;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+}
+.chain-header {
+  color: var(--atlas-400);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--atlas-800);
+}
+.chain-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 4px;
+  margin-bottom: 0.35rem;
+  opacity: 0;
+  transform: translateX(-8px);
+  animation: stepIn 0.4s ease forwards;
+  position: relative;
+}
+.chain-step:nth-child(2) { animation-delay: 0.1s; }
+.chain-step:nth-child(3) { animation-delay: 0.35s; }
+.chain-step:nth-child(4) { animation-delay: 0.6s; }
+.chain-step:nth-child(5) { animation-delay: 0.85s; }
+.chain-step:nth-child(6) { animation-delay: 1.1s; }
+.chain-step:nth-child(7) { animation-delay: 1.35s; }
+@keyframes stepIn {
+  to { opacity: 1; transform: translateX(0); }
+}
+.chain-step.step-source   { background: rgba(255,255,255,0.04); }
+.chain-step.step-claim    { background: rgba(255,255,255,0.04); }
+.chain-step.step-conflict { background: rgba(245,158,11,0.08); }
+.chain-step.step-resolve  { background: rgba(16,185,129,0.08); }
+.chain-step.step-project  { background: rgba(255,255,255,0.04); }
+.chain-step.step-report   { background: rgba(255,255,255,0.06); }
+.step-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  flex-shrink: 0;
+  margin-top: 0.05rem;
+}
+.icon-source   { background: var(--atlas-800); color: var(--atlas-300); }
+.icon-claim    { background: var(--atlas-800); color: var(--atlas-300); }
+.icon-conflict { background: rgba(245,158,11,0.2); color: var(--disputed-500); }
+.icon-resolve  { background: rgba(16,185,129,0.2); color: var(--resolved-500); }
+.icon-project  { background: var(--atlas-800); color: var(--atlas-300); }
+.icon-report   { background: rgba(255,255,255,0.08); color: #fff; }
+.step-body { flex: 1; min-width: 0; }
+.step-label {
+  font-size: 0.7rem;
+  color: var(--atlas-500);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 0.2rem;
+}
+.step-value { color: var(--atlas-100); font-size: 0.82rem; line-height: 1.4; }
+.step-meta { color: var(--atlas-500); font-size: 0.68rem; margin-top: 0.2rem; }
+.step-connector {
+  position: absolute;
+  left: 1.8rem;
+  bottom: -0.35rem;
+  width: 1.5px;
+  height: 0.35rem;
+  background: var(--atlas-700);
+}
+.chain-step:last-child .step-connector { display: none; }
+
+/* ── Problem section ── */
+.section-problem {
+  padding: 6rem 0;
+  background: var(--atlas-50);
+  border-bottom: 1px solid var(--atlas-100);
+}
+.section-problem .container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5rem;
+  align-items: start;
+}
+.section-label {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--atlas-500);
+  margin-bottom: 1rem;
+}
+.section-problem h2 {
+  font-family: var(--serif);
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  color: var(--atlas-900);
+  margin-bottom: 1.25rem;
+}
+.section-problem p {
+  color: var(--atlas-600);
+  font-size: 0.95rem;
+  line-height: 1.7;
+  margin-bottom: 1rem;
+}
+.source-conflict-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.source-conflict-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+}
+.source-name {
+  background: #fff;
+  border: 1px solid var(--atlas-200);
+  border-radius: 4px 0 0 4px;
+  padding: 0.6rem 0.85rem;
+  color: var(--atlas-700);
+  font-weight: 500;
+  flex: 0 0 140px;
+  display: flex;
+  align-items: center;
+}
+.source-value {
+  background: #fff;
+  border: 1px solid var(--atlas-200);
+  border-left: none;
+  border-radius: 0 4px 4px 0;
+  padding: 0.6rem 0.85rem;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.source-value.disputed { border-color: #fde68a; background: #fffbeb; }
+.source-value code {
+  font-family: var(--mono);
+  font-size: 0.76rem;
+  color: var(--atlas-800);
+}
+.source-value.disputed code { color: var(--disputed-700); }
+
+/* ── Solution / Features ── */
+.section-solution {
+  padding: 6rem 0;
+}
+.section-solution h2 {
+  font-family: var(--serif);
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--atlas-900);
+  margin-bottom: 0.75rem;
+  text-align: center;
+}
+.section-solution > .container > p {
+  text-align: center;
+  color: var(--atlas-500);
+  font-size: 0.95rem;
+  max-width: 52ch;
+  margin: 0 auto 3.5rem;
+}
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+.feature-card {
+  border: 1px solid var(--atlas-100);
+  border-radius: 6px;
+  padding: 1.75rem;
+  background: #fff;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.feature-card:hover {
+  border-color: var(--atlas-300);
+  box-shadow: 0 4px 16px rgba(16,42,67,0.06);
+}
+.feature-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 5px;
+  background: var(--atlas-50);
+  border: 1px solid var(--atlas-100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+.feature-card h3 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--atlas-900);
+  margin-bottom: 0.5rem;
+}
+.feature-card p {
+  font-size: 0.83rem;
+  color: var(--atlas-500);
+  line-height: 1.65;
+}
+
+/* ── Workflow ── */
+.section-workflow {
+  padding: 6rem 0;
+  background: var(--atlas-50);
+  border-top: 1px solid var(--atlas-100);
+  border-bottom: 1px solid var(--atlas-100);
+}
+.section-workflow h2 {
+  font-family: var(--serif);
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin-bottom: 0.75rem;
+  text-align: center;
+}
+.section-workflow > .container > p {
+  text-align: center;
+  color: var(--atlas-500);
+  font-size: 0.95rem;
+  margin-bottom: 3.5rem;
+}
+.workflow-steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  position: relative;
+}
+.workflow-steps::before {
+  content: "";
+  position: absolute;
+  top: 1.25rem;
+  left: calc(12.5% + 1.125rem);
+  right: calc(12.5% + 1.125rem);
+  height: 1.5px;
+  background: var(--atlas-200);
+  z-index: 0;
+}
+.workflow-step {
+  text-align: center;
+  padding: 0 1rem;
+  position: relative;
+  z-index: 1;
+}
+.workflow-num {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: var(--atlas-900);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+  font-family: var(--mono);
+}
+.workflow-step h3 {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--atlas-900);
+  margin-bottom: 0.4rem;
+}
+.workflow-step p {
+  font-size: 0.8rem;
+  color: var(--atlas-500);
+  line-height: 1.55;
+}
+
+/* ── Use cases ── */
+.section-usecases {
+  padding: 6rem 0;
+}
+.section-usecases h2 {
+  font-family: var(--serif);
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin-bottom: 0.75rem;
+  text-align: center;
+}
+.section-usecases > .container > p {
+  text-align: center;
+  color: var(--atlas-500);
+  font-size: 0.95rem;
+  margin-bottom: 3.5rem;
+}
+.usecase-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+.usecase-card {
+  border: 1px solid var(--atlas-100);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.usecase-header {
+  background: var(--atlas-900);
+  color: #fff;
+  padding: 1.25rem 1.5rem;
+}
+.usecase-header .label {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--atlas-400);
+  margin-bottom: 0.4rem;
+}
+.usecase-header h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+.usecase-body {
+  padding: 1.25rem 1.5rem;
+  background: #fff;
+}
+.usecase-body p {
+  font-size: 0.83rem;
+  color: var(--atlas-600);
+  line-height: 1.65;
+  margin-bottom: 1rem;
+}
+.usecase-points {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.usecase-points li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--atlas-600);
+}
+.usecase-points li::before {
+  content: "→";
+  color: var(--atlas-400);
+  flex-shrink: 0;
+  margin-top: 0.05rem;
+}
+
+/* ── Security strip ── */
+.section-security {
+  padding: 5rem 0;
+  background: var(--atlas-950);
+  color: #fff;
+}
+.security-inner {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 4rem;
+  align-items: start;
+}
+.security-inner .section-label { color: var(--atlas-500); }
+.security-inner h2 {
+  font-family: var(--serif);
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin-bottom: 0.75rem;
+  color: #fff;
+}
+.security-inner > div > p {
+  color: var(--atlas-400);
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+.security-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+.security-item {
+  background: var(--atlas-900);
+  border: 1px solid var(--atlas-800);
+  border-radius: 5px;
+  padding: 1rem 1.25rem;
+}
+.security-item h4 {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--atlas-100);
+  margin-bottom: 0.3rem;
+}
+.security-item p {
+  font-size: 0.76rem;
+  color: var(--atlas-500);
+  line-height: 1.55;
+}
+
+/* ── Request access ── */
+.section-request {
+  padding: 6rem 0;
+  background: var(--atlas-50);
+  border-top: 1px solid var(--atlas-100);
+}
+.request-inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5rem;
+  align-items: start;
+}
+.request-inner h2 {
+  font-family: var(--serif);
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin-bottom: 0.75rem;
+  color: var(--atlas-900);
+}
+.request-inner > div:first-child > p {
+  color: var(--atlas-600);
+  font-size: 0.95rem;
+  line-height: 1.7;
+  margin-bottom: 1.5rem;
+}
+.trust-points {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.trust-points li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  color: var(--atlas-600);
+}
+.trust-points li::before {
+  content: "✓";
+  color: var(--resolved-700);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* ── Form ── */
+.form-card {
+  background: #fff;
+  border: 1px solid var(--atlas-200);
+  border-radius: 8px;
+  padding: 2rem;
+}
+.form-card h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--atlas-900);
+  margin-bottom: 1.5rem;
+}
+.form-group {
+  margin-bottom: 1rem;
+}
+.form-group label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--atlas-700);
+  margin-bottom: 0.35rem;
+}
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 0.55em 0.8em;
+  border: 1.5px solid var(--atlas-200);
+  border-radius: 4px;
+  font-family: var(--sans);
+  font-size: 0.88rem;
+  color: var(--atlas-900);
+  background: #fff;
+  transition: border-color 0.15s;
+  outline: none;
+  appearance: none;
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: var(--atlas-500);
+  box-shadow: 0 0 0 3px rgba(98,125,152,0.15);
+}
+.form-group textarea { resize: vertical; min-height: 80px; }
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+.form-submit {
+  margin-top: 1.25rem;
+  width: 100%;
+  padding: 0.7em;
+  background: var(--atlas-900);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-family: var(--sans);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.form-submit:hover { background: var(--atlas-800); }
+.form-note {
+  font-size: 0.72rem;
+  color: var(--atlas-400);
+  margin-top: 0.75rem;
+  text-align: center;
+  line-height: 1.5;
+}
+#success-msg {
+  display: none;
+  text-align: center;
+  padding: 2rem;
+}
+#success-msg h3 { color: var(--atlas-900); margin-bottom: 0.5rem; }
+#success-msg p { color: var(--atlas-600); font-size: 0.88rem; }
+
+/* ── Footer ── */
+footer {
+  border-top: 1px solid var(--atlas-100);
+  padding: 3rem 0;
+  background: #fff;
+}
+.footer-inner {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 3rem;
+}
+.footer-brand .nav-logo { display: block; margin-bottom: 0.75rem; }
+.footer-brand p {
+  font-size: 0.8rem;
+  color: var(--atlas-500);
+  line-height: 1.65;
+  max-width: 28ch;
+}
+.footer-col h4 {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--atlas-700);
+  margin-bottom: 0.85rem;
+}
+.footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
+.footer-col ul li a {
+  font-size: 0.82rem;
+  color: var(--atlas-500);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.footer-col ul li a:hover { color: var(--atlas-800); }
+.footer-bottom {
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--atlas-100);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.footer-bottom p {
+  font-size: 0.75rem;
+  color: var(--atlas-400);
+  font-family: var(--mono);
+}
+
+/* ── Animations ── */
+.fade-in {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.fade-in.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .hero-inner { grid-template-columns: 1fr; gap: 3rem; }
+  .hero h1 { font-size: 2.25rem; }
+  .section-problem .container { grid-template-columns: 1fr; gap: 2.5rem; }
+  .feature-grid { grid-template-columns: 1fr 1fr; }
+  .usecase-grid { grid-template-columns: 1fr; }
+  .workflow-steps { grid-template-columns: 1fr 1fr; gap: 2rem; }
+  .workflow-steps::before { display: none; }
+  .security-inner { grid-template-columns: 1fr; gap: 2rem; }
+  .security-grid { grid-template-columns: 1fr; }
+  .request-inner { grid-template-columns: 1fr; gap: 2.5rem; }
+  .footer-inner { grid-template-columns: 1fr 1fr; }
+  .nav-links { display: none; }
+}
+@media (max-width: 600px) {
+  .feature-grid { grid-template-columns: 1fr; }
+  .workflow-steps { grid-template-columns: 1fr; }
+  .form-row { grid-template-columns: 1fr; }
+  .footer-inner { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Nav ── -->
+<nav>
+  <div class="nav-inner">
+    <a href="/" class="nav-logo">Atlas <span>Argus</span></a>
+    <ul class="nav-links">
+      <li><a href="/platform.html">Platform</a></li>
+      <li><a href="/use-cases.html">Use cases</a></li>
+      <li><a href="/how-it-works.html">How it works</a></li>
+      <li><a href="/security.html">Security</a></li>
+      <li><a href="/compliance.html">Compliance</a></li>
+      <li><a href="/about.html">About</a></li>
+    </ul>
+    <div class="nav-cta">
+      <a href="/request-access.html" class="btn btn-primary">Request access</a>
+    </div>
+  </div>
+</nav>
+<!-- ── Hero ── -->
+<section class="hero">
+  <div class="hero-inner">
+    <div>
+      <div class="hero-eyebrow">Aviation Safety Atlas</div>
+      <h1>The record<br>you can <em>defend.</em></h1>
+      <p class="hero-sub">
+        Investigation evidence disagrees across NTSB reports, FAA records, maintenance logs,
+        witness statements, and depositions. Atlas reconciles conflicting claims into a
+        source-traceable record — every projected fact accountable to its evidence chain.
+      </p>
+      <div class="hero-actions">
+        <a href="/request-access.html" class="btn btn-primary btn-lg">Request access</a>
+        <a href="/how-it-works.html" class="btn btn-outline btn-lg">See how it works</a>
+      </div>
+    </div>
+    <div class="hero-diagram">
+      <div class="chain-container">
+        <div class="chain-header">Evidence chain — Colgan Air 3407 · pitch_trim field</div>
+        <div class="chain-step step-source">
+          <div class="step-icon icon-source">S</div>
+          <div class="step-body">
+            <div class="step-label">Source</div>
+            <div class="step-value">NTSB Accident Report AAR-10/01</div>
+            <div class="step-meta">Tier 1 · Official record · Ingested 2024-03-15</div>
+          </div>
+          <div class="step-connector"></div>
+        </div>
+        <div class="chain-step step-claim">
+          <div class="step-icon icon-claim">C</div>
+          <div class="step-body">
+            <div class="step-label">Claim</div>
+            <div class="step-value">pitch_trim = "2.5° nose up at impact"</div>
+            <div class="step-meta">RAW · claimId: a3f9…</div>
+          </div>
+          <div class="step-connector"></div>
+        </div>
+        <div class="chain-step step-conflict">
+          <div class="step-icon icon-conflict">!</div>
+          <div class="step-body">
+            <div class="step-label">Conflict detected</div>
+            <div class="step-value">CVR transcript disagrees: "2.3° nose up"</div>
+            <div class="step-meta" style="color:var(--disputed-500)">OPEN · 2 competing claims · v3</div>
+          </div>
+          <div class="step-connector"></div>
+        </div>
+        <div class="chain-step step-resolve">
+          <div class="step-icon icon-resolve">✓</div>
+          <div class="step-body">
+            <div class="step-label">Resolved</div>
+            <div class="step-value">Winner: NTSB report (Tier 1 > Tier 2)</div>
+            <div class="step-meta" style="color:var(--resolved-500)">Rationale: "NTSB final report supersedes CVR preliminary" · Reviewer: jsmith</div>
+          </div>
+          <div class="step-connector"></div>
+        </div>
+        <div class="chain-step step-project">
+          <div class="step-icon icon-project">P</div>
+          <div class="step-body">
+            <div class="step-label">Projected record</div>
+            <div class="step-value">pitch_trim = "2.5° nose up at impact"</div>
+            <div class="step-meta">Projection v14 · Evidence-support: Tier 1</div>
+          </div>
+          <div class="step-connector"></div>
+        </div>
+        <div class="chain-step step-report">
+          <div class="step-icon icon-report">R</div>
+          <div class="step-body">
+            <div class="step-label">Report export v2</div>
+            <div class="step-value">Field footnoted → Source · Resolution history included</div>
+            <div class="step-meta" style="font-family:var(--mono)">sha256: 4a7f3c91… · Immutable</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Problem ── -->
+<section class="section-problem" id="platform">
+  <div class="container">
+    <div>
+      <div class="section-label">The Problem</div>
+      <h2>Evidence disagrees.<br>Silence is not resolution.</h2>
+      <p>
+        Aviation accident investigations draw on a dozen source types — NTSB final reports,
+        FAA accident data, maintenance records, CVR/FDR readouts, ASAP submissions,
+        witness depositions, and news coverage. Every source has a different level of
+        authority. Every source can contain errors.
+      </p>
+      <p>
+        When sources conflict, the default response is to pick one silently. That choice
+        is invisible to anyone reviewing the record later — including a jury.
+      </p>
+      <p>
+        Atlas makes every disagreement explicit, every resolution auditable, and
+        every projected fact traceable to its source basis.
+      </p>
+    </div>
+    <div>
+      <div class="section-label" style="margin-bottom:1rem">pitch_trim · Colgan Air 3407</div>
+      <div class="source-conflict-grid">
+        <div class="source-conflict-row">
+          <div class="source-name">NTSB Final</div>
+          <div class="source-value">
+            <code>2.5° nose up</code>
+            <span class="chip chip-resolved">Tier 1</span>
+          </div>
+        </div>
+        <div class="source-conflict-row">
+          <div class="source-name">CVR Transcript</div>
+          <div class="source-value disputed">
+            <code>2.3° nose up</code>
+            <span class="chip chip-disputed">Conflict</span>
+          </div>
+        </div>
+        <div class="source-conflict-row">
+          <div class="source-name">Maint. Log</div>
+          <div class="source-value">
+            <code>not recorded</code>
+            <span class="chip chip-neutral">Tier 3</span>
+          </div>
+        </div>
+        <div class="source-conflict-row">
+          <div class="source-name">News report</div>
+          <div class="source-value disputed">
+            <code>"nose up position"</code>
+            <span class="chip chip-disputed">Unresolved</span>
+          </div>
+        </div>
+        <div class="source-conflict-row">
+          <div class="source-name" style="border-top:2px solid var(--atlas-200)">Atlas projection</div>
+          <div class="source-value" style="border-top:2px solid var(--atlas-200)">
+            <code style="color:var(--resolved-700);font-weight:600">2.5° nose up ← NTSB Final</code>
+            <span class="chip chip-resolved">Resolved</span>
+          </div>
+        </div>
+      </div>
+      <p style="font-size:0.76rem;color:var(--atlas-400);margin-top:0.75rem;font-family:var(--mono)">
+        Resolution logged · Rationale preserved · Auditable at any time
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ── Features ── -->
+<section class="section-solution">
+  <div class="container">
+    <div class="section-label fade-in" style="text-align:center">Platform Capabilities</div>
+    <h2 class="fade-in">Claims. Conflicts. Provenance. Reports.</h2>
+    <p class="fade-in">Every capability is built around a single principle: every projected fact must be traceable to its evidence chain.</p>
+    <div class="feature-grid">
+      <div class="feature-card fade-in">
+        <div class="feature-icon">⬡</div>
+        <h3>Claims Model</h3>
+        <p>Every field value is a claim from a specific source. Claims have types (RAW, CONFIRMED, MANUAL_OVERRIDE), reliability tiers, ingestion timestamps, and full history.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon">⚡</div>
+        <h3>Conflict Detection</h3>
+        <p>When active claims for a field disagree, a conflict is raised automatically. Conflicts are first-class states — not bugs, not silenced disagreements.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon">✓</div>
+        <h3>Auditable Resolution</h3>
+        <p>Reviewers select a winning claim or enter a manual override — both require a written rationale. Every resolution is preserved with curator identity and timestamp.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon">🔗</div>
+        <h3>Provenance Chain</h3>
+        <p>From any projected fact, navigate the full evidence chain: source → ingestion → claim → conflict → resolution → projection. Audit hashes verifiable independently.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon">⏱</div>
+        <h3>Timeline Reconstruction</h3>
+        <p>Source-backed event sequences with conflict indicators for uncertain or disputed entries. Every timeline item links to its evidence basis.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon">📄</div>
+        <h3>Report Export</h3>
+        <p>Generate immutable, versioned PDF reports. Every output fact carries an explicit footnote: source, ingestion timestamp, reliability tier. Mandatory disclaimer on every export.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── How it works ── -->
+<section class="section-workflow" id="how-it-works">
+  <div class="container">
+    <div class="section-label fade-in" style="text-align:center">How It Works</div>
+    <h2 class="fade-in">Ingest → Reconcile → Resolve → Export</h2>
+    <p class="fade-in">A deterministic, auditable pipeline from raw sources to a court-submissible record.</p>
+    <div class="workflow-steps">
+      <div class="workflow-step fade-in">
+        <div class="workflow-num">01</div>
+        <h3>Ingest sources</h3>
+        <p>Upload PDFs, dockets, and structured records. Text is extracted conservatively. Ingestion is idempotent — re-runs are safe.</p>
+      </div>
+      <div class="workflow-step fade-in">
+        <div class="workflow-num">02</div>
+        <h3>Detect conflicts</h3>
+        <p>When two active claims for the same field disagree, a conflict is raised. The projected field shows DISPUTED until resolved.</p>
+      </div>
+      <div class="workflow-step fade-in">
+        <div class="workflow-num">03</div>
+        <h3>Resolve with rationale</h3>
+        <p>Reviewers pick the winning claim or enter a manual override — both require a written rationale. 409 optimistic locking prevents concurrent edits from silently clobbering each other.</p>
+      </div>
+      <div class="workflow-step fade-in">
+        <div class="workflow-num">04</div>
+        <h3>Export the record</h3>
+        <p>Generate an immutable, versioned report. Every fact footnoted. Resolution history appended. Audit hashes included for independent verification.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Use Cases ── -->
+<section class="section-usecases" id="use-cases">
+  <div class="container">
+    <div class="section-label fade-in" style="text-align:center">Who Uses Atlas</div>
+    <h2 class="fade-in">Built for the people who need to be right.</h2>
+    <p class="fade-in">Three distinct workflows, one evidence platform.</p>
+    <div class="usecase-grid">
+      <div class="usecase-card fade-in">
+        <div class="usecase-header">
+          <div class="label">Use Case 01</div>
+          <h3>Aviation Litigation</h3>
+        </div>
+        <div class="usecase-body">
+          <p>When a plaintiff or defendant needs to reconstruct what was known, when it was known, and why a particular finding stands — Atlas provides a court-ready audit trail from source to conclusion.</p>
+          <ul class="usecase-points">
+            <li>Conflict resolution history with curator identity</li>
+            <li>Immutable versioned reports with content hashes</li>
+            <li>Source reliability tier documented per fact</li>
+            <li>Mandatory disclaimer on every export</li>
+          </ul>
+        </div>
+      </div>
+      <div class="usecase-card fade-in">
+        <div class="usecase-header">
+          <div class="label">Use Case 02</div>
+          <h3>Safety Investigation</h3>
+        </div>
+        <div class="usecase-body">
+          <p>Investigators working across NTSB dockets, CVR/FDR data, maintenance records, and ASAP submissions need a single reconciled view — without silently resolving contradictions.</p>
+          <ul class="usecase-points">
+            <li>Multi-source ingestion with idempotency</li>
+            <li>Conflict queue for systematic disagreement review</li>
+            <li>Timeline reconstruction with uncertainty indicators</li>
+            <li>HFACS/SHELO causal attribution (evidence-backed)</li>
+          </ul>
+        </div>
+      </div>
+      <div class="usecase-card fade-in">
+        <div class="usecase-header">
+          <div class="label">Use Case 03</div>
+          <h3>Airline & MRO Safety Teams</h3>
+        </div>
+        <div class="usecase-body">
+          <p>Internal safety teams reviewing incidents against published accident records need provenance-aware cross-referencing — with tenant isolation keeping private operational data separate from public evidence.</p>
+          <ul class="usecase-points">
+            <li>Tenant-isolated private sources and overlays</li>
+            <li>Cross-reference against public corpus</li>
+            <li>FOQA/ASAP ingestion (forthcoming)</li>
+            <li>Export to Relativity, iManage (forthcoming)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Security ── -->
+<section class="section-security" id="security">
+  <div class="container">
+    <div class="security-inner">
+      <div>
+        <div class="section-label">Security &amp; Compliance</div>
+        <h2>Designed for legal defensibility from the ground up.</h2>
+        <p>Every architectural decision considers what happens when the record is questioned — in deposition, in court, or in a regulatory proceeding.</p>
+      </div>
+      <div class="security-grid">
+        <div class="security-item">
+          <h4>Tenant isolation</h4>
+          <p>PostgreSQL row-level security enforces tenant boundaries at the database layer. Tenant-private data cannot leak through public search, maps, or reports.</p>
+        </div>
+        <div class="security-item">
+          <h4>Audit hash chains</h4>
+          <p>Every claim history entry and conflict resolution carries a cryptographic hash. The chain is independently verifiable without access to the Atlas system.</p>
+        </div>
+        <div class="security-item">
+          <h4>No API keys in the browser</h4>
+          <p>A Browser-for-Frontend (BFF) proxy holds API keys server-side. The browser holds only an HttpOnly session cookie. X-API-Key never appears in browser network requests.</p>
+        </div>
+        <div class="security-item">
+          <h4>Append-only evidence store</h4>
+          <p>Claims and conflicts are never deleted or silently edited. Superseded claims remain auditable. The full history of every field value is preserved.</p>
+        </div>
+        <div class="security-item">
+          <h4>Role-based access control</h4>
+          <p>Analyst (read-only), Reviewer (resolve/ingest/report), Admin. Roles enforced server-side; UI affordances reflect but do not substitute for backend enforcement.</p>
+        </div>
+        <div class="security-item">
+          <h4>Immutable report exports</h4>
+          <p>Generated reports are versioned, content-hashed, and never overwritten. A report is a snapshot of what was believed at a specific point in time.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Request access ── -->
+<section class="section-request" id="request-access">
+  <div class="container">
+    <div class="request-inner">
+      <div>
+        <div class="section-label">Access</div>
+        <h2>Request access to Atlas.</h2>
+        <p>
+          Atlas is currently in early access for law firms, aviation safety investigators,
+          and airline/MRO safety teams. Access is granted after a brief qualification
+          call to understand your use case.
+        </p>
+        <ul class="trust-points">
+          <li>No subscription required to request access</li>
+          <li>Response within one business day</li>
+          <li>Data handling agreement provided before onboarding</li>
+          <li>Self-hosted deployment available for enterprise</li>
+        </ul>
+      </div>
+      <div>
+        <div class="form-card">
+          <h3>Tell us about your use case</h3>
+          <div id="request-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="req-name">Full name</label>
+                <input type="text" id="req-name" placeholder="Jane Smith" autocomplete="name">
+              </div>
+              <div class="form-group">
+                <label for="req-email">Work email</label>
+                <input type="email" id="req-email" placeholder="jane@example.com" autocomplete="email">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="req-org">Organization</label>
+                <input type="text" id="req-org" placeholder="Smith &amp; Associates">
+              </div>
+              <div class="form-group">
+                <label for="req-org-type">Organization type</label>
+                <select id="req-org-type">
+                  <option value="">Select…</option>
+                  <option value="law_firm">Law firm</option>
+                  <option value="aviation_safety">Aviation safety investigator</option>
+                  <option value="airline">Airline / MRO</option>
+                  <option value="insurer">Insurer</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="req-role">Your role</label>
+              <input type="text" id="req-role" placeholder="e.g. Aviation counsel, Safety investigator">
+            </div>
+            <div class="form-group">
+              <label for="req-usecase">Describe your use case</label>
+              <textarea id="req-usecase" placeholder="What evidence challenges are you facing? What would a defensible record let you do?"></textarea>
+            </div>
+            <button class="form-submit" onclick="handleSubmit(event)">Request access →</button>
+            <p class="form-note">
+              We collect this information solely to qualify and schedule access.
+              See our <a href="/legal/privacy.html" style="color:var(--atlas-500)">Privacy Policy</a>.
+            </p>
+          </div>
+          <div id="success-msg">
+            <div style="font-size:2rem;margin-bottom:1rem">✓</div>
+            <h3>Request received</h3>
+            <p>We'll be in touch within one business day.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Footer ── -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <a class="nav-logo" href="/">Aviation Safety <span>Atlas</span></a>
+        <p>The projected public record is not the truth. The evidence chain is the truth.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Product</h4>
+        <ul>
+          <li><a href="/platform.html">Platform</a></li>
+          <li><a href="/how-it-works.html">How it works</a></li>
+          <li><a href="/use-cases.html">Use cases</a></li>
+          <li><a href="/request-access.html">Request access</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Trust</h4>
+        <ul>
+          <li><a href="/security.html">Security</a></li>
+          <li><a href="/compliance.html">Compliance</a></li>
+          <li><a href="/legal/privacy.html">Privacy</a></li>
+          <li><a href="/legal/terms.html">Terms of service</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="/about.html">About</a></li>
+          <li><a href="/contact.html">Contact</a></li>
+          <li><a href="/contact#security">Security disclosure</a></li>
+          <li><a href="/contact#legal">Legal contact</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2026 Aviation Safety Atlas. All rights reserved.</p>
+      <p>Built for the record you can defend.</p>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ── Scroll-triggered fade-ins ──
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach((entry, i) => {
+    if (entry.isIntersecting) {
+      // Stagger siblings
+      const parent = entry.target.parentElement;
+      const siblings = parent ? [...parent.querySelectorAll('.fade-in')] : [entry.target];
+      const idx = siblings.indexOf(entry.target);
+      setTimeout(() => {
+        entry.target.classList.add('visible');
+      }, idx * 80);
+      observer.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.12 });
+
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+// ── Form submission ──
+function handleSubmit(e) {
+  e.preventDefault();
+
+  const name    = document.getElementById('req-name').value.trim();
+  const email   = document.getElementById('req-email').value.trim();
+  const org     = document.getElementById('req-org').value.trim();
+  const orgType = document.getElementById('req-org-type').value;
+  const role    = document.getElementById('req-role').value.trim();
+  const usecase = document.getElementById('req-usecase').value.trim();
+
+  if (!name || !email || !org || !orgType || !role || !usecase) {
+    alert('Please fill in all fields.');
+    return;
+  }
+  if (!email.includes('@')) {
+    alert('Please enter a valid email address.');
+    return;
+  }
+
+  const btn = document.querySelector('.form-submit');
+  btn.textContent = 'Submitting…';
+  btn.disabled = true;
+
+  // POST to BFF lead capture endpoint
+  fetch('/api/leads', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name, email,
+      organization: org,
+      organizationType: orgType,
+      role,
+      useCase: usecase,
+    }),
+  })
+  .then(res => {
+    // Show success regardless of response in MVP (lead capture is fire-and-forget)
+    document.getElementById('request-form').style.display = 'none';
+    document.getElementById('success-msg').style.display = 'block';
+  })
+  .catch(() => {
+    // Same: show success — don't lose the lead over a network hiccup
+    document.getElementById('request-form').style.display = 'none';
+    document.getElementById('success-msg').style.display = 'block';
+  });
+}
+
+// ── Smooth scroll for anchor links ──
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    const id = a.getAttribute('href').slice(1);
+    const target = document.getElementById(id);
+    if (target) {
+      e.preventDefault();
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+});
+</script>
+</body>
+</html>

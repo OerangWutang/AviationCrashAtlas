@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Request Access — Aviation Safety Atlas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Serif:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<nav>
+  <div class="nav-inner">
+    <a href="/" class="nav-logo">Atlas <span>Argus</span></a>
+    <ul class="nav-links">
+      <li><a href="/platform.html">Platform</a></li>
+      <li><a href="/use-cases.html">Use cases</a></li>
+      <li><a href="/how-it-works.html">How it works</a></li>
+      <li><a href="/security.html">Security</a></li>
+      <li><a href="/compliance.html">Compliance</a></li>
+      <li><a href="/about.html">About</a></li>
+    </ul>
+    <div class="nav-cta">
+      <a href="/request-access.html" class="btn btn-primary">Request access</a>
+    </div>
+  </div>
+</nav>
+
+<main>
+<section class="page-header">
+  <div class="container">
+    <h1>Request access</h1>
+    <p class="subtitle">Qualifying organizations get a guided onboarding and sandbox environment.</p>
+  </div>
+</section>
+<section class="section">
+  <div class="container">
+    <div class="form-card">
+      <h2>Get started with Atlas</h2>
+      <div id="form-success" class="form-success">
+        <h3>Thank you</h3>
+        <p>Your request has been submitted. Our team will follow up within one business day.</p>
+      </div>
+      <form id="request-form" onsubmit="return submitLead(event)">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="name">Full name *</label>
+            <input type="text" id="name" name="name" required maxlength="200">
+          </div>
+          <div class="form-group">
+            <label for="email">Email *</label>
+            <input type="email" id="email" name="email" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="organization">Organization *</label>
+            <input type="text" id="organization" name="organization" required>
+          </div>
+          <div class="form-group">
+            <label for="organizationType">Organization type *</label>
+            <select id="organizationType" name="organizationType" required>
+              <option value="">Select…</option>
+              <option value="law_firm">Law firm</option>
+              <option value="aviation_safety">Aviation safety</option>
+              <option value="airline">Airline</option>
+              <option value="mro">MRO</option>
+              <option value="insurer">Insurer</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="useCase">How would you use Atlas? *</label>
+          <textarea id="useCase" name="useCase" required maxlength="2000"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="message">Anything else we should know?</label>
+          <textarea id="message" name="message"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" style="width:100%;justify-content:center;">Submit request</button>
+        <p style="font-size:0.75rem;color:var(--atlas-400);margin-top:1rem;text-align:center;">We'll never share your information. No spam, ever.</p>
+      </form>
+    </div>
+  </div>
+</section>
+<script>
+async function submitLead(e) {
+  e.preventDefault();
+  const f = e.target;
+  const data = {
+    name: f.name.value.trim(),
+    email: f.email.value.trim(),
+    organization: f.organization.value.trim(),
+    organizationType: f.organizationType.value,
+    useCase: f.useCase.value.trim(),
+    message: f.message.value.trim() || undefined
+  };
+  try {
+    const res = await fetch('/api/leads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if (res.ok) {
+      document.getElementById('form-success').style.display = 'block';
+      f.style.display = 'none';
+    } else {
+      alert('Something went wrong. Please try again or contact us.');
+    }
+  } catch {
+    alert('Unable to connect. Please try again.');
+  }
+  return false;
+}
+</script>
+</main>
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <a class="nav-logo" href="/">Aviation Safety <span>Atlas</span></a>
+        <p>The projected public record is not the truth. The evidence chain is the truth.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Product</h4>
+        <ul>
+          <li><a href="/platform.html">Platform</a></li>
+          <li><a href="/how-it-works.html">How it works</a></li>
+          <li><a href="/use-cases.html">Use cases</a></li>
+          <li><a href="/request-access.html">Request access</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Trust</h4>
+        <ul>
+          <li><a href="/security.html">Security</a></li>
+          <li><a href="/compliance.html">Compliance</a></li>
+          <li><a href="/legal/privacy.html">Privacy</a></li>
+          <li><a href="/legal/terms.html">Terms of service</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="/about.html">About</a></li>
+          <li><a href="/contact.html">Contact</a></li>
+          <li><a href="/contact#security">Security disclosure</a></li>
+          <li><a href="/contact#legal">Legal contact</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2026 Aviation Safety Atlas. All rights reserved.</p>
+      <p>Built for the record you can defend.</p>
+    </div>
+  </div>
+</footer>
+</body>
+</html>
