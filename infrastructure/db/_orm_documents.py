@@ -39,6 +39,8 @@ class UploadedDocumentModel(Base, ComplianceMixin):
     mime_type: Mapped[str] = mapped_column(String(100), nullable=False, default="application/pdf")
     page_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     parse_status: Mapped[str] = mapped_column(String(50), nullable=False, default="uploaded")
+    parse_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    extracted_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     object_key: Mapped[str | None] = mapped_column(Text, nullable=True)
     uploaded_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
