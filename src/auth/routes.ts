@@ -42,7 +42,7 @@ interface LoginBody {
   password: string;
 }
 
-const DUMMY_ARGON2ID_HASH = "$argon2id$v=19$m=65536,t=3,p=4$cGxhY2Vob2xkZXJfc2FsdF8xMjM0NQ$nkHFQliDUlMHfY+9SGsMcLiESfQcixfgWNgR6X5jZUw";
+const DUMMY_ARGON2ID_HASH = "$argon2id$v=19$m=65536,t=3,p=4$HTt/m0fUT3LL1X0+gAps+A$j4zmcF+D2D85eSjrINvASDluLn5SHyNgJhCF12qsmxM";
 
 function isBffPostgresEnabled(): boolean {
   return Boolean(process.env["BFF_DATABASE_URL"]);
