@@ -1,0 +1,78 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --sidebar-width: 16rem;
+    --topbar-height: 3.25rem;
+  }
+
+  html {
+    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    color: #102a43;
+    background: #f8fafc;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  body {
+    margin: 0;
+    min-width: 320px;
+    min-height: 100vh;
+  }
+
+  /* Dense tables for investigators */
+  table {
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #bcccdc;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #829ab1;
+  }
+}
+
+@layer components {
+  /* Status chips */
+  .chip {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-xs;
+  }
+  .chip-disputed {
+    @apply bg-disputed-100 text-disputed-700 border border-disputed-200;
+  }
+  .chip-resolved {
+    @apply bg-resolved-100 text-resolved-700 border border-resolved-200;
+  }
+  .chip-superseded {
+    @apply bg-gray-100 text-superseded-500 border border-gray-200;
+  }
+  .chip-raw {
+    @apply bg-atlas-50 text-atlas-700 border border-atlas-200;
+  }
+
+  /* Dense table rows */
+  .table-row-dense {
+    @apply border-b border-atlas-100 hover:bg-atlas-50/50 transition-colors duration-75;
+  }
+
+  /* Focus ring for accessibility */
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-atlas-400 focus-visible:ring-offset-1;
+  }
+}
