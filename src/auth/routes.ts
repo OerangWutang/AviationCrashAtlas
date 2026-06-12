@@ -16,13 +16,14 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import argon2 from "argon2";
 import { getConfig } from "../config.js";
-import { findUserByEmail } from "../db/users.js";
+import { findUserByEmail, type UserRow } from "../db/users.js";
 import {
   createUserSession,
   resolveSession,
   invalidateSession,
   sessionCookieOptions,
   getCookieName,
+  type SessionUser,
 } from "./sessions.js";
 import {
   generateCsrfToken,
@@ -39,6 +40,21 @@ import {
 interface LoginBody {
   email: string;
   password: string;
+}
+
+const DUMMY_ARGON2ID_HASH = "$argon2id$v=19$m=65536,t=3,p=4$HTt/m0fUT3LL1X0+gAps+A$j4zmcF+D2D85eSjrINvASDluLn5SHyNgJhCF12qsmxM";
+
+function isBffPostgresEnabled(): boolean {
+  return Boolean(process.env["BFF_DATABASE_URL"]);
+}
+
+async function findActiveUserByEmail(email: string): Promise<UserRow | null> {
+  if (isBffPostgresEnabled()) {
+    const { findUserByEmailPg } = await import("../db/repos-pg.js");
+    const user = await findUserByEmailPg(email.toLowerCase().trim());
+    return user && Number(user.is_active) === 1 ? (user as UserRow) : null;
+  }
+  return findUserByEmail(email) ?? null;
 }
 
 export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
@@ -68,20 +84,16 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
         return reply.status(400).send({ error: "email and password are required" });
       }
 
-      // Constant-time user lookup (even if user not found, run a dummy verify)
-      const user = findUserByEmail(email);
-
-      // Always verify (using a dummy hash if user not found) to prevent
-      // timing-based user enumeration. argon2 verify is always ~same cost.
-      const hashToVerify =
-        user?.password_hash ??
-        "$argon2id$v=19$m=65536,t=3,p=4$placeholder$placeholder";
+      // Always verify against a valid Argon2id hash.  Missing users use a
+      // real precomputed dummy hash so the negative path does the same class of
+      // work instead of failing quickly during hash parsing.
+      const user = await findActiveUserByEmail(email);
+      const hashToVerify = user?.password_hash ?? DUMMY_ARGON2ID_HASH;
 
       let valid = false;
       try {
         valid = await argon2.verify(hashToVerify, password);
       } catch {
-        // Argon2 parse failure on the dummy hash — expected, treat as invalid
         valid = false;
       }
 
@@ -92,7 +104,7 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
       }
 
       // Create server-side session
-      const sessionId = createUserSession(user.id, {
+      const sessionId = await createUserSession(user.id, {
         ip: req.ip,
         userAgent: req.headers["user-agent"],
       });
@@ -129,7 +141,7 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
       return reply.status(401).send({ error: "No session" });
     }
 
-    const sessionUser = resolveSession(sessionId);
+    const sessionUser = await resolveSession(sessionId);
     if (!sessionUser) {
       // Session expired or invalid — clear the stale cookie
       reply.clearCookie(cookieName, { path: "/" });
@@ -163,11 +175,11 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
       const csrfCookie = req.cookies[CSRF_COOKIE];
       if (!verifyCsrfToken(csrfCookie, csrfHeader)) {
         // Invalid CSRF — still clear session for safety but return 403
-        invalidateSession(sessionId);
+        await invalidateSession(sessionId);
         reply.clearCookie(cookieName, { path: "/" }).clearCookie(CSRF_COOKIE, { path: "/" });
         return reply.status(403).send({ error: "CSRF validation failed" });
       }
-      invalidateSession(sessionId);
+      await invalidateSession(sessionId);
     }
 
     reply
@@ -222,7 +234,7 @@ function roleToPermissions(role: string): Record<string, boolean> {
 export async function requireSession(
   req: FastifyRequest,
   reply: FastifyReply,
-) {
+): Promise<SessionUser | undefined> {
   const config = getConfig();
   const cookieName = getCookieName(config.isProduction);
   const sessionId = req.cookies[cookieName];
@@ -233,7 +245,7 @@ export async function requireSession(
     return undefined;
   }
 
-  const sessionUser = resolveSession(sessionId);
+  const sessionUser = await resolveSession(sessionId);
   if (!sessionUser) {
     reply.clearCookie(cookieName, { path: "/" });
     await reply.status(401).send({ error: "Session expired" });

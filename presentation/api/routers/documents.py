@@ -12,15 +12,12 @@ GET    /documents/{id}/text           Return extracted plain text for review.
 
 Design constraints
 ------------------
-* The router never buffers the entire file in memory beyond what pypdf needs.
-  File size is validated before parsing.
+* Request bodies are bounded before parsing so oversized uploads are rejected.
 * Parse failures are stored, not raised.  The UI can show the failure and let
   a reviewer try again or flag for OCR.
-* Ingestion calls the existing ``IngestSourceData`` use case unchanged.
-  The document adapter is additive — zero downstream changes required.
-* Object storage: MVP stores extracted text in the DB row (raw_payload in the
-  snapshot) and the object_key column is reserved for a real S3 integration.
-  Files are not stored long-term in this MVP; the extracted text is what matters.
+* Object storage: MVP stores extracted text in the DB row and reserves the
+  object_key column for a real S3 integration. Files are not stored long-term in
+  this MVP; the extracted text and verifiable content hash are what matter.
 """
 
 from __future__ import annotations
@@ -28,20 +25,19 @@ from __future__ import annotations
 import hashlib
 import logging
 import re
+import secrets
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text as sa_text
 
 from atlas.application.dto import CurrentUser
 from atlas.application.unit_of_work import UnitOfWork
-from atlas.config import get_settings
 from atlas.domain.entities import Source
 from atlas.domain.enums import Role, SourceKind
 from atlas.infrastructure.db.orm_models import UploadedDocumentModel
 from atlas.infrastructure.ingestion.pdf_reader import read_pdf
 from atlas.presentation.api.dependencies import get_uow, require_role
-from atlas.security import sign_evidence_hash
 from atlas.presentation.api.schemas.documents import (
     DocumentIngestResponse,
     DocumentListItem,
@@ -51,6 +47,7 @@ from atlas.presentation.api.schemas.documents import (
     DocumentUploadResponse,
     DocumentVerifyResponse,
 )
+from atlas.security import sign_evidence_hash
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 logger = logging.getLogger(__name__)
@@ -60,28 +57,42 @@ _WRITERS = (Role.ADMIN, Role.REVIEWER)
 
 # Conservative file size limit: 50 MB.
 _MAX_FILE_BYTES = 50 * 1024 * 1024
-_ALLOWED_MIME_TYPES = {"application/pdf", "application/x-pdf"}
 _MAX_FILENAME_LENGTH = 255
 _SAFE_FILENAME_RE = re.compile(r"[^\w.\-]")
 
 
-def _sanitize_filename(raw: str | None) -> str:
-    """Return a safe filename derived from the upload's reported filename.
+class _RequestUploadTooLarge(Exception):
+    pass
 
-    Strips path components, removes control characters and non-ASCII chars
-    that could be used for CRLF injection or path traversal, and falls back
-    to a generic name when nothing useful remains.
-    """
+
+def _sanitize_filename(raw: str | None) -> str:
+    """Return a safe filename derived from the upload's reported filename."""
     if not raw:
         return "document.pdf"
-    # Strip any path separators — take the rightmost component only.
     name = raw.replace("\\", "/").rsplit("/", 1)[-1]
-    # Remove null bytes and control characters.
     name = name.replace("\x00", "").replace("\r", "").replace("\n", "")
-    # Keep only word chars, dots, and hyphens; replace everything else with _.
     name = _SAFE_FILENAME_RE.sub("_", name)
     name = name[:_MAX_FILENAME_LENGTH]
     return name or "document.pdf"
+
+
+async def _read_upload_bounded(file: UploadFile) -> bytes:
+    """Read an upload with a hard byte cap, independent of Content-Length."""
+    if file.size and file.size > _MAX_FILE_BYTES:
+        raise _RequestUploadTooLarge
+
+    chunks: list[bytes] = []
+    total = 0
+    while True:
+        chunk = await file.read(1024 * 1024)
+        if not chunk:
+            break
+        total += len(chunk)
+        if total > _MAX_FILE_BYTES:
+            raise _RequestUploadTooLarge
+        chunks.append(chunk)
+    return b"".join(chunks)
+
 
 # Source name used when no explicit source is provided.  The BFF is expected
 # to resolve-or-create a proper source before calling; this is the fallback.
@@ -93,7 +104,7 @@ async def _resolve_or_create_source(
     uow: UnitOfWork,
     source_name: str = _DEFAULT_SOURCE_NAME,
 ) -> Source:
-    """Get or create a Source for uploaded documents."""
+    """Get or create a Source for uploaded documents without committing early."""
     existing = await uow.sources.get_by_name(source_name)
     if existing:
         return existing
@@ -104,7 +115,6 @@ async def _resolve_or_create_source(
         reliability_tier=_DEFAULT_RELIABILITY_TIER,
     )
     await uow.sources.add(source)
-    await uow.commit()
     return source
 
 
@@ -120,29 +130,15 @@ async def upload_document(
     uow: UnitOfWork = Depends(get_uow, scope="function"),
     current_user: CurrentUser = Depends(require_role(*_WRITERS)),
 ) -> DocumentUploadResponse:
-    """Upload a PDF/docket file, extract text, and store document metadata.
-
-    The file is parsed immediately on upload.  Ingestion (creating claims in
-    the accident record) is a separate step (POST /documents/{id}/ingest) so
-    reviewers can inspect the extracted text first.
-
-    Parse failures are stored and returned — they are never 500 errors.
-    """
-    # Basic validation
-    if file.size and file.size > _MAX_FILE_BYTES:
+    """Upload a PDF/docket file, extract text, and store document metadata."""
+    try:
+        content = await _read_upload_bounded(file)
+    except _RequestUploadTooLarge:
         raise HTTPException(
             status_code=413,
             detail=f"File too large. Maximum is {_MAX_FILE_BYTES // (1024 * 1024)} MB.",
-        )
+        ) from None
 
-    content = await file.read()
-    if len(content) > _MAX_FILE_BYTES:
-        raise HTTPException(
-            status_code=413,
-            detail=f"File too large. Maximum is {_MAX_FILE_BYTES // (1024 * 1024)} MB.",
-        )
-
-    # Magic-byte check: PDF files start with %PDF
     if not content.startswith(b"%PDF"):
         raise HTTPException(
             status_code=422,
@@ -154,14 +150,10 @@ async def upload_document(
     evidence_signature = sign_evidence_hash(content_sha256)
     size_bytes = len(content)
 
-    # Parse the PDF
     read_result = read_pdf(content)
-
-    # Resolve source
     effective_source_name = source_name or _DEFAULT_SOURCE_NAME
     source = await _resolve_or_create_source(uow, effective_source_name)
 
-    # Create the document row
     doc_id = uuid4()
     parse_status = "parsed" if read_result.parse_ok else "parse_failed"
 
@@ -175,38 +167,27 @@ async def upload_document(
         mime_type="application/pdf",
         page_count=read_result.page_count or None,
         parse_status=parse_status,
-        object_key=None,  # Reserved for real object storage
+        parse_note=read_result.parse_note or None,
+        extracted_text=read_result.text or None,
+        object_key=None,
         uploaded_by=current_user.user_id,
     )
 
-    # Store extracted text in a companion row (via raw_payload in the snapshot)
-    # by attaching it to the model's extra data.  For now we piggyback on
-    # object_key being null and store the note in the DB.
-    # The full text is available via /documents/{id}/text by re-parsing.
-    # In production this would write to object storage and store the key.
-
-    # We use the session directly for the ORM model since it's not yet in a repository.
-    uow._session.add(doc)  # type: ignore[attr-defined]
+    session = uow._session  # type: ignore[attr-defined]
+    session.add(doc)
+    await session.execute(
+        sa_text(
+            """INSERT INTO compliance_events
+               (id, entity_type, entity_id, action, reason, actor_type, actor_id)
+               VALUES (gen_random_uuid(), 'uploaded_document', :eid, 'UPLOADED', :reason, 'USER', :actor)"""
+        ),
+        {
+            "eid": str(doc_id),
+            "reason": f"Uploaded {filename} ({size_bytes} bytes)",
+            "actor": str(current_user.user_id),
+        },
+    )
     await uow.commit()
-
-    # Record chain-of-custody compliance event
-    try:
-        from sqlalchemy import text as sa_text
-
-        await uow._session.execute(  # type: ignore[attr-defined]
-            sa_text(
-                """INSERT INTO compliance_events (id, entity_type, entity_id, action, reason, actor_type, actor_id)
-                   VALUES (gen_random_uuid(), 'document', :eid, 'UPLOADED', :reason, 'USER', :actor)"""
-            ),
-            {
-                "eid": str(doc_id),
-                "reason": f"Uploaded {filename} ({size_bytes} bytes)",
-                "actor": str(current_user.user_id),
-            },
-        )
-        await uow.commit()
-    except Exception:
-        logger.warning("Failed to record compliance event for document %s (non-fatal)", doc_id)
 
     logger.info(
         "Document uploaded: id=%s filename=%s size=%d parse_status=%s",
@@ -282,12 +263,7 @@ async def get_document_text(
     uow: UnitOfWork = Depends(get_uow, scope="function"),
     _user: CurrentUser = Depends(require_role(*_READERS)),
 ) -> DocumentTextResponse:
-    """Return the extracted plain text for a document.
-
-    In MVP, this re-reads the raw_payload from the ingestion snapshot if
-    ingested, or returns a note that the document needs to be ingested first.
-    The full extracted text is stored in raw_payload.extracted_text.
-    """
+    """Return extracted plain text for review before ingestion."""
     session = uow._session  # type: ignore[attr-defined]
     result = await session.execute(
         select(UploadedDocumentModel).where(UploadedDocumentModel.id == document_id)
@@ -298,36 +274,12 @@ async def get_document_text(
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
 
-    if doc.parse_status == "parse_failed":
-        return DocumentTextResponse(
-            document_id=doc.id,
-            filename=doc.filename,
-            parse_status=doc.parse_status,
-            text=None,
-            parse_note="Parse failed. The document may be encrypted or scanned without a text layer.",
-        )
-
-    if doc.parse_status in ("ingested", "parsed"):
-        # Text is available via the raw_payload snapshot; for MVP return a
-        # pointer note since we don't persist the extracted text separately.
-        return DocumentTextResponse(
-            document_id=doc.id,
-            filename=doc.filename,
-            parse_status=doc.parse_status,
-            text=None,
-            parse_note=(
-                "Document has been processed. "
-                "Full text is stored in the ingestion raw_payload. "
-                "Re-upload to retrieve text for review."
-            ),
-        )
-
     return DocumentTextResponse(
         document_id=doc.id,
         filename=doc.filename,
         parse_status=doc.parse_status,
-        text=None,
-        parse_note="Document has not been ingested yet.",
+        text=doc.extracted_text,
+        parse_note=doc.parse_note,
     )
 
 
@@ -340,13 +292,9 @@ async def ingest_document(
 ) -> DocumentIngestResponse:
     """Trigger ingestion of an already-uploaded, successfully-parsed document.
 
-    This re-reads the document from storage (MVP: the content hash is used to
-    reconstruct an idempotency key), submits claims through IngestSourceData,
-    and updates the document's parse_status to 'ingested' or 'ingest_failed'.
-
-    In MVP, since we do not have persistent object storage, this endpoint
-    returns an error directing the reviewer to re-upload and ingest in one step.
-    The endpoint contract is correct for when object storage is wired.
+    The MVP persists extracted text for review, but it does not yet include a
+    document-to-claim mapper.  Keep this endpoint explicit so callers get a
+    stable contract while the mapper is added.
     """
     session = uow._session  # type: ignore[attr-defined]
     result = await session.execute(
@@ -363,7 +311,8 @@ async def ingest_document(
             detail="Document parse failed. Fix the parse issue before ingesting.",
         )
 
-    if doc.parse_status in ("ingested",):
+    if doc.parse_status == "ingested":
+        await uow.rollback()
         return DocumentIngestResponse(
             document_id=doc.id,
             filename=doc.filename,
@@ -372,24 +321,21 @@ async def ingest_document(
             error="Document has already been ingested.",
         )
 
-    if not doc.source_id:
+    if not doc.extracted_text:
         raise HTTPException(
             status_code=422,
-            detail="Document has no source_id. Upload with a source_name to attach a source.",
+            detail="Document has no extracted text to ingest.",
         )
 
-    # MVP: object storage not wired, so we cannot retrieve the original bytes.
-    # Return a clear error directing the caller to use the upload endpoint.
-    await uow.rollback()
+    doc.event_id = event_id or doc.event_id
+    doc.parse_status = "ingest_failed"
+    await uow.commit()
     return DocumentIngestResponse(
         document_id=doc.id,
         filename=doc.filename,
         parse_status=doc.parse_status,
         ingestion_result=None,
-        error=(
-            "Object storage not configured in MVP. "
-            "Use POST /documents?ingest=true on upload to ingest in one step."
-        ),
+        error="Document-to-claim mapping is not implemented yet. Review extracted text via GET /documents/{id}/text.",
     )
 
 
@@ -399,12 +345,7 @@ async def get_document_receipt(
     uow: UnitOfWork = Depends(get_uow, scope="function"),
     _user: CurrentUser = Depends(require_role(*_READERS)),
 ) -> DocumentReceiptResponse:
-    """Return the verifiable evidence receipt for an uploaded document.
-
-    The receipt includes the SHA-256 content hash and its HMAC signature.
-    Callers can present this as proof that a document was uploaded with
-    a specific hash at a specific time.
-    """
+    """Return the verifiable evidence receipt for an uploaded document."""
     session = uow._session  # type: ignore[attr-defined]
     result = await session.execute(
         select(UploadedDocumentModel).where(UploadedDocumentModel.id == document_id)
@@ -432,13 +373,7 @@ async def verify_document_receipt(
     uow: UnitOfWork = Depends(get_uow, scope="function"),
     _user: CurrentUser = Depends(require_role(*_READERS)),
 ) -> DocumentVerifyResponse:
-    """Verify that a document's stored content hash matches a claimed evidence signature.
-
-    The server recomputes the HMAC signature over the stored content_sha256
-    using the evidence signing secret.  If the recomputed signature matches
-    the caller's presented signature, the hash is authentic (issued by this
-    Atlas server) and has not been tampered with.
-    """
+    """Verify that a document's stored content hash matches a claimed evidence signature."""
     session = uow._session  # type: ignore[attr-defined]
     result = await session.execute(
         select(UploadedDocumentModel).where(UploadedDocumentModel.id == document_id)
@@ -448,7 +383,7 @@ async def verify_document_receipt(
         raise HTTPException(status_code=404, detail="Document not found")
 
     recomputed = sign_evidence_hash(doc.content_sha256)
-    signature_valid = recomputed == claimed_signature
+    signature_valid = secrets.compare_digest(recomputed, claimed_signature)
 
     await uow.rollback()
     return DocumentVerifyResponse(

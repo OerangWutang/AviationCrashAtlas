@@ -144,7 +144,7 @@ alembic revision -m "describe_the_change"
 ATLAS_ALLOW_DB_RESET=1 make migrate-check
 ```
 
-Migrations are in `alembic/versions/`. The current head is `055_standardize_ingestion_run_status`.
+Migrations are in `alembic/versions/`. The current head is `056_persist_document_parse_output`.
 
 ---
 

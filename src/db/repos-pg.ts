@@ -41,13 +41,15 @@ export interface SessionUser {
 
 export async function findUserByEmailPg(email: string, pool?: pg.Pool): Promise<UserRow | null> {
   const p = pool ?? getPgPool();
-  const result = await p.query("SELECT * FROM users WHERE email = $1", [email]);
+  const result = await p.query("SELECT * FROM users WHERE email = $1 AND is_active = 1", [
+    email.toLowerCase().trim(),
+  ]);
   return result.rows[0] ?? null;
 }
 
 export async function findUserByIdPg(id: string, pool?: pg.Pool): Promise<UserRow | null> {
   const p = pool ?? getPgPool();
-  const result = await p.query("SELECT * FROM users WHERE id = $1", [id]);
+  const result = await p.query("SELECT * FROM users WHERE id = $1 AND is_active = 1", [id]);
   return result.rows[0] ?? null;
 }
 
@@ -63,7 +65,14 @@ export async function createUserPg(user: {
   await p.query(
     `INSERT INTO users (id, email, password_hash, role, atlas_user_id, encrypted_api_key)
      VALUES ($1, $2, $3, $4, $5, $6)`,
-    [user.id, user.email, user.passwordHash, user.role, user.atlasUserId, user.encryptedApiKey],
+    [
+      user.id,
+      user.email.toLowerCase().trim(),
+      user.passwordHash,
+      user.role,
+      user.atlasUserId,
+      user.encryptedApiKey,
+    ],
   );
 }
 
