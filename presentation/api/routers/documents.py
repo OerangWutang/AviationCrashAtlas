@@ -95,7 +95,7 @@ async def _read_upload_bounded(file: UploadFile) -> bytes:
 
 
 # Source name used when no explicit source is provided.  The BFF is expected
-to resolve-or-create a proper source before calling; this is the fallback.
+# to resolve-or-create a proper source before calling; this is the fallback.
 _DEFAULT_SOURCE_NAME = "Uploaded Document"
 _DEFAULT_RELIABILITY_TIER = 3  # User-uploaded; lower trust than official records
 
