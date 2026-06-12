@@ -117,7 +117,7 @@ class ComplianceEventModel(Base):
         ),
         CheckConstraint(
             "action IN ('LEGAL_HOLD_APPLIED', 'LEGAL_HOLD_RELEASED', "
-            "'REDACTION_APPLIED', 'RETENTION_SET', 'DELETION_APPLIED')",
+            "'REDACTION_APPLIED', 'RETENTION_SET', 'DELETION_APPLIED', 'UPLOADED')",
             name="ck_compliance_events_action",
         ),
         CheckConstraint(
