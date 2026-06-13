@@ -8,9 +8,17 @@
         free-backup free-backup-check free-bootstrap release-clean
 
 PYTHON   := python
-PYTEST   := PYTHONPATH=src:. pytest
+PYTHONPATH := src:.
+PYTEST   := PYTHONPATH=$(PYTHONPATH) pytest
 RUFF     := ruff
-MYPY     := PYTHONPATH=src mypy
+MYPY     := PYTHONPATH=$(PYTHONPATH) mypy
+
+# Backend Python is currently split between the new src/atlas namespace shim
+# and legacy root-level implementation packages. Keeping this list explicit
+# prevents backend checks from accidentally walking the TypeScript app in src/.
+PY_BACKEND_DIRS := src/atlas application domain infrastructure presentation security scripts alembic
+PY_TEST_DIRS    := api tests
+PY_BACKEND_FILES := config.py logging_config.py mfa.py
 
 help:           ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -110,7 +118,7 @@ test-integration: ## Run DB-backed integration tests (requires make up && make m
 	$(PYTEST) -m integration --run-integration -v
 
 test-cov:       ## Run tests with coverage report
-	$(PYTEST) --cov=src/atlas --cov-report=term-missing --cov-report=html
+	$(PYTEST) --cov=atlas --cov=application --cov=domain --cov=infrastructure --cov=presentation --cov-report=term-missing --cov-report=html
 
 # ── Static analysis ──────────────────────────────────────────────────────────
 
@@ -125,29 +133,29 @@ format-check:   ## Check formatting without modifying files
 	$(RUFF) format --check .
 
 typecheck:      ## Run mypy strict type checking
-	$(MYPY) src
+	$(MYPY)
 
 # ── Combined checks ──────────────────────────────────────────────────────────
 
 check:          ## Run lint + format-check + typecheck + unit tests (fast, no DB)
-	$(PYTHON) -m compileall -q src tests alembic
+	$(PYTHON) -m compileall -q $(PY_BACKEND_DIRS) $(PY_TEST_DIRS) $(PY_BACKEND_FILES)
 	$(RUFF) check .
 	$(RUFF) format --check .
-	$(MYPY) src
+	$(MYPY)
 	$(PYTEST) --no-cov -m "not integration and not release"
 
 ci-local:       ## Mirror the fast CI path locally (no Docker/PostGIS)
-	$(PYTHON) -m compileall -q src tests alembic
+	$(PYTHON) -m compileall -q $(PY_BACKEND_DIRS) $(PY_TEST_DIRS) $(PY_BACKEND_FILES)
 	$(RUFF) check .
 	$(RUFF) format --check .
-	$(MYPY) src
+	$(MYPY)
 	$(PYTEST) --no-cov -m "not integration and not release"
 
 ci:             ## Full CI suite including integration tests (requires DB)
-	$(PYTHON) -m compileall -q src tests alembic
+	$(PYTHON) -m compileall -q $(PY_BACKEND_DIRS) $(PY_TEST_DIRS) $(PY_BACKEND_FILES)
 	$(RUFF) check .
 	$(RUFF) format --check .
-	$(MYPY) src
+	$(MYPY)
 	$(PYTEST) --no-cov --run-integration -m "not release"
 
 # ── Cleanup ──────────────────────────────────────────────────────────────────
@@ -156,7 +164,7 @@ release-check:  ## Pre-install artifact check: run BEFORE pip install -e . (bloc
 	@echo "── release-check: verifying clean source tree ──"
 	$(RUFF) check .
 	$(RUFF) format --check .
-	$(MYPY) src
+	$(MYPY)
 	$(PYTEST) --no-cov -m "release and not integration"
 	@echo "── release-check passed ──"
 
