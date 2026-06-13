@@ -72,11 +72,15 @@ atlas = "atlas.presentation.cli.commands:app"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+include = ["atlas*"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src", "."]
 asyncio_mode = "auto"
-testpaths = ["tests"]
+# The current repository still has backend tests split across legacy top-level
+# locations. Keep pytest aware of those paths until they are physically moved
+# under tests/ in follow-up reorganization PRs.
+testpaths = ["api", "domain", "application", "infrastructure", "tests"]
 addopts = "--cov=atlas --cov-report=term-missing -q"
 markers = [
     "integration: tests that require PostgreSQL",
@@ -86,7 +90,16 @@ filterwarnings = ["error::DeprecationWarning"]
 
 [tool.ruff]
 line-length = 100
-src = ["src", "tests"]
+src = [
+    "src",
+    "api",
+    "application",
+    "domain",
+    "infrastructure",
+    "presentation",
+    "security",
+    "tests",
+]
 target-version = "py312"
 
 [tool.ruff.lint]
@@ -104,8 +117,23 @@ known-first-party = ["atlas", "tests"]
 
 [tool.mypy]
 # Strict type-checking applies to production source only.
-# Test code is intentionally exercised by pytest rather than mypy; use `mypy src`.
-files = ["src"]
+# Test code is intentionally exercised by pytest rather than mypy.
+files = [
+    "src",
+    "application",
+    "domain",
+    "infrastructure",
+    "presentation",
+    "security",
+    "config.py",
+    "logging_config.py",
+    "mfa.py",
+]
+exclude = [
+    "(^|/)test_.*\\.py$",
+    "^api/",
+    "^tests/",
+]
 python_version = "3.12"
 strict = true
 ignore_missing_imports = true
