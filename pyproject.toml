@@ -105,7 +105,7 @@ target-version = "py312"
 [tool.ruff.lint]
 select = ["E", "W", "F", "I", "B", "UP", "RUF"]
 # B008: function calls in default args. FastAPI's `Depends(...)`, `Security(...)`,
-#       `Query)`, `Body(...)` etc. are the canonical pattern; the framework
+#       `Query(...)`, `Body(...)` etc. are the canonical pattern; the framework
 #       resolves them per-request. Ignoring globally is the standard approach.
 # E501: long lines — handled by formatter when present.
 # UP047: PEP 695 generic-function syntax. Mypy strict + Pydantic v2 plugin
